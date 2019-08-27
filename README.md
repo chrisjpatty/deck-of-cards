@@ -1,3 +1,5 @@
 # deck-of-cards
 
-## npm start
+## Running the project
+
+`npm start`
