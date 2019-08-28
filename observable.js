@@ -1,5 +1,6 @@
 const fetch = require("node-fetch");
 const debounce = require("lodash/debounce");
+const { Observable } = require("rxjs/Observable");
 const chalk = require("chalk");
 
 const SHUFFLE_URL =
@@ -34,36 +35,45 @@ const logDraw = cards =>
     )
   );
 
+const setAndLogCards = cards => {
+  setCards(cards);
+  logDraw(cards);
+};
+
 // Log the finished stacks
-const logCards = () =>
+const logCards = () => {
+  console.log(chalk.blue('\nFinished!\n'))
   Object.entries(drawnCards).forEach(([suit, cards]) =>
     console.log(`${suit}: [${cards.join(", ")}]`)
   );
+}
 
-// Draw 2 new cards
-const draw = deck_id => {
-  fetch(getDrawURL(deck_id))
+const observable = Observable.create(observable => {
+  // Draw 2 new cards
+  const draw = deck_id => {
+    fetch(getDrawURL(deck_id))
+      .then(res => res.json())
+      .then(({ cards }) => {
+        observable.next(cards);
+        if (getHasFinished()) {
+          observable.complete();
+        } else {
+          debouncedDraw(deck_id);
+        }
+      })
+      .catch(err => observable.error(err));
+  };
+  const debouncedDraw = debounce(draw, 1000);
+
+  // Shuffle the deck and start the drawing
+  fetch(SHUFFLE_URL)
     .then(res => res.json())
-    .then(({ cards }) => {
-      logDraw(cards);
-      setCards(cards);
-      if (!getHasFinished()) {
-        debouncedDraw(deck_id);
-      } else {
-        console.log("\nFinished:\n");
-        logCards();
-      }
+    .then(({ deck_id }) => {
+      console.clear();
+      console.log(chalk.blue("Started Drawing\n"));
+      debouncedDraw(deck_id);
     })
-    .catch(err => console.error(err));
-};
-const debouncedDraw = debounce(draw, 1000);
+    .catch(err => observable.error(err));
+});
 
-// Shuffle the deck and start the drawing
-fetch(SHUFFLE_URL)
-  .then(res => res.json())
-  .then(({ deck_id }) => {
-    console.clear();
-    console.log(chalk.blue("Started Drawing\n"));
-    debouncedDraw(deck_id);
-  })
-  .catch(err => console.error(err));
+observable.subscribe(setAndLogCards, console.error, logCards);
