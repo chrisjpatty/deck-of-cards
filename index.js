@@ -24,7 +24,7 @@ const setCards = cards =>
 // Log the most recent drawn cards
 const logDraw = cards =>
   console.log(
-    `Drew ${cards[0].value} of ${cards[0].suit} and ${cards[0].value} of ${
+    `Drew ${cards[0].value} of ${cards[0].suit} and ${cards[1].value} of ${
       cards[1].suit
     }`
   );
