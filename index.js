@@ -36,28 +36,27 @@ const logCards = () =>
   );
 
 // Draw 2 new cards
-const draw = deck_id => {
-  fetch(getDrawURL(deck_id))
-    .then(res => res.json())
-    .then(({ cards }) => {
-      logDraw(cards);
-      setCards(cards);
-      if (!getHasFinished()) {
-        debouncedDraw(deck_id);
-      } else {
-        console.log("\nFinished:\n");
-        logCards();
-      }
-    })
-    .catch(err => console.error(err));
+const draw = async deck_id => {
+  const res = await fetch(getDrawURL(deck_id));
+  const { cards } = await res.json();
+  logDraw(cards);
+  setCards(cards);
+  if (!getHasFinished()) {
+    debouncedDraw(deck_id);
+  } else {
+    console.log("\nFinished:\n");
+    logCards();
+  }
 };
 const debouncedDraw = debounce(draw, 1000);
 
 // Shuffle the deck and start the drawing
-fetch(SHUFFLE_URL)
-  .then(res => res.json())
-  .then(({ deck_id }) => {
-    console.log("Started Drawing");
-    debouncedDraw(deck_id);
-  })
-  .catch(err => console.error(err));
+const shuffle = async () => {
+  console.clear();
+  const res = await fetch(SHUFFLE_URL);
+  const { deck_id } = await res.json();
+  console.log("Started Drawing");
+  debouncedDraw(deck_id);
+};
+
+shuffle();
